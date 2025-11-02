@@ -1,27 +1,57 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Leaf, ShoppingCart, Search, Star, Clock, MapPin, LogOut, Bell, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Badge } from "../components/ui/badge";
+import { Leaf, ShoppingCart, Search, Star, MapPin, LogOut, Bell, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import produceImage from "@/assets/fresh-produce.jpg";
-import { FreshnessScore } from "@/components/FreshnessScore";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "../hooks/use-toast";
+import produceImage from "../assets/fresh-produce.jpg";
+import { FreshnessScore } from "../components/FreshnessScore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+
+// Firestore imports
+import { db } from "../Firebase/firebase.config";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
 const BuyerDashboard = () => {
   const [cart, setCart] = useState([]);
   const [freshnessFilter, setFreshnessFilter] = useState("all");
   const [sortBy, setSortBy] = useState("freshness");
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const { toast } = useToast();
 
-  
-  
-    const name = localStorage.getItem("userName") || "Buyer";
-    const role = localStorage.getItem("userRole") || "Buyer";
+  const name = localStorage.getItem("userName") || "Buyer";
 
+  // Fetch products from Firestore in real-time
+  useEffect(() => {
+    const productsRef = collection(db, "products"); // <- updated collection name
+    const q = query(productsRef, orderBy("uploadTime", "desc"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const prodData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || "Unknown Product",
+          nameBangla: data.nameBangla || "",
+          farmer: data.farmer || "Unknown Farmer",
+          location: data.location || "Unknown",
+          distance: data.distance || 0,
+          price: data.price || 0,
+          rating: data.rating || 0,
+          freshness: data.freshness || 0,
+          verified: data.verified || false,
+          uploadTime: data.uploadTime?.toDate ? data.uploadTime.toDate() : new Date(),
+        };
+      });
+      console.log("Products fetched:", prodData);
+      setProducts(prodData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleAddToCart = (productId) => {
     setCart([...cart, productId]);
@@ -31,78 +61,20 @@ const BuyerDashboard = () => {
     });
   };
 
-  const mockProducts = [
-    {
-      id: "Fresh Tomatoes",
-      nameBangla: "টমেটো",
-      farmer: "Abdul Karim",
-      farmerBadges: ["freshness_champion", "punctual"],
-      location: "Kumira",
-      distance: 3,
-      price: 8,
-      freshness: 97,
-      verified: true,
-      uploadTime: Date.now() - 2 * 60 * 60 * 1000,
-      rating: 4.5,
-    },
-    {
-      id: "Cucumbers",
-      nameBangla: "শসা",
-      farmer: "Rahima Begum",
-      farmerBadges: ["trusted"],
-      location: "Kumira",
-      distance: 5,
-      price: 9,
-      freshness: 90,
-      verified: true,
-      uploadTime: Date.now() - 4 * 60 * 60 * 1000,
-      rating: 4.2,
-    },
-    {
-      id: "Green Chili",
-      nameBangla: "কাঁচা মরিচ",
-      farmer: "Jasim Uddin",
-      farmerBadges: ["top_seller", "eco_warrior"],
-      location: "Kumira",
-      distance: 8,
-      price: 7,
-      freshness: 95,
-      verified: true,
-      uploadTime: Date.now() - 1 * 60 * 60 * 1000,
-      rating: 4.8,
-    },
-    {
-      id: "Leafy Greens",
-      nameBangla: "শাক সবজি",
-      farmer: "Fatima Khatun",
-      farmerBadges: ["freshness_champion"],
-      location: "Kumira",
-      distance: 1,
-      price: 9,
-      freshness: 92,
-      verified: true,
-      uploadTime: Date.now() - 3 * 60 * 60 * 1000,
-      rating: 4.6,
-    },
-  ];
+  // Filter & sort logic
+  const filteredProducts = products
+    .filter((product) => {
+      const searchMatch =
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.nameBangla.includes(searchQuery) ||
+        product.farmer.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!searchMatch) return false;
 
-  const filteredProducts = mockProducts
-  .filter((product) => {
-    // ✅ Search filter
-    const searchMatch =
-      product.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.nameBangla.includes(searchQuery) ||
-      product.farmer.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (!searchMatch) return false;
-
-    // ✅ Freshness filter
-    if (freshnessFilter === "ultra") return product.freshness >= 95;
-    if (freshnessFilter === "high") return product.freshness >= 85;
-    return true;
-  })
-  .sort((a, b) => {
- 
+      if (freshnessFilter === "ultra") return product.freshness >= 95;
+      if (freshnessFilter === "high") return product.freshness >= 85;
+      return true;
+    })
+    .sort((a, b) => {
       if (sortBy === "freshness") return b.freshness - a.freshness;
       if (sortBy === "distance") return a.distance - b.distance;
       if (sortBy === "price_low") return a.price - b.price;
@@ -110,21 +82,10 @@ const BuyerDashboard = () => {
       return 0;
     });
 
+  // Mock orders for sidebar
   const mockOrders = [
-    {
-      id: "order1",
-      items: "Tomatoes (10kg), Cucumbers (5kg)",
-      status: "confirmed",
-      delivery: "Today, 8",
-      total: 500,
-    },
-    {
-      id: "order2",
-      items: "Green Chili (2kg)",
-      status: "dispatched",
-      delivery: "Tomorrow, 7",
-      total: 140,
-    },
+    { id: "order1", items: "Tomatoes (10kg), Cucumbers (5kg)", status: "confirmed", delivery: "Today, 8", total: 500 },
+    { id: "order2", items: "Green Chili (2kg)", status: "dispatched", delivery: "Tomorrow, 7", total: 140 },
   ];
 
   return (
@@ -161,10 +122,8 @@ const BuyerDashboard = () => {
       <div className="container py-8">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome,{name}</h1>
-          <p className="text-muted-foreground">
-            Browse fresh produce from Kumira's local farmers
-          </p>
+          <h1 className="text-3xl font-bold mb-2">Welcome, {name}</h1>
+          <p className="text-muted-foreground">Browse fresh produce from Kumira's local farmers</p>
         </div>
 
         {/* Search & Filters */}
@@ -172,10 +131,10 @@ const BuyerDashboard = () => {
           <div className="relative max-w-2xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-               placeholder="Search for products... পণ্য অনুসন্ধান করুন"
-                   className="pl-10 h-12"
-                   value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for products... পণ্য অনুসন্ধান করুন"
+              className="pl-10 h-12"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
@@ -226,13 +185,11 @@ const BuyerDashboard = () => {
                   <CardHeader className="pb-3">
                     <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
                       <img src={produceImage} alt={product.name} className="h-full w-full object-cover" />
-                      {product.verified && (
-                        <Badge className="absolute top-2 right-2 bg-primary">✓ Verified Fresh</Badge>
-                      )}
+                      {product.verified && <Badge className="absolute top-2 right-2 bg-primary">✓ Verified Fresh</Badge>}
                     </div>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">{product.id}</CardTitle>
+                        <CardTitle className="text-lg">{product.name}</CardTitle>
                         <CardDescription>{product.nameBangla}</CardDescription>
                       </div>
                       <div className="text-right">
@@ -290,10 +247,7 @@ const BuyerDashboard = () => {
                       </div>
                       <p className="font-bold">৳{order.total}</p>
                     </div>
-                    <Badge
-                      variant={order.status === "dispatched" ? "secondary" : "default"}
-                      className="text-xs"
-                    >
+                    <Badge variant={order.status === "dispatched" ? "secondary" : "default"} className="text-xs">
                       {order.status === "confirmed" ? "Confirmed" : "Dispatched"}
                     </Badge>
                   </div>
