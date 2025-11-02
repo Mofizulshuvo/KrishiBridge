@@ -1,73 +1,201 @@
-# Welcome to your Lovable project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/8a402f7c-592b-4e35-9b6b-811a59c70e70
+## 🌾 KrishiBridge — Smart Agro Marketplace
 
-## How can I edit this code?
+### *Empowering Local Farmers with AI-driven Fair Trade, Freshness, and Trust*
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+### 🌍 Overview
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8a402f7c-592b-4e35-9b6b-811a59c70e70) and start prompting.
+**KrishiBridge** is a web platform that connects **farmers, buyers, and delivery partners** through **data-driven insights and local commerce**.
 
-Changes made via Lovable will be committed automatically to this repo.
+Built with **React + Firebase**, it offers farmers an easy way to sell produce, buyers a transparent marketplace, and the community a sustainable ecosystem.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### ✨ Key Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+#### 💚 Smart & Data-Driven
 
-Follow these steps:
+* 🤖 **AI Price Recommender:** Suggests fair prices based on recent market trends.
+* 🥦 **Freshness Score:** Real-time freshness indicator based on harvest time.
+* 🔍 **Smart Matchmaking:** Auto-suggests nearby buyers for each farmer’s produce.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+#### 🚚 Logistics & Delivery
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+* 🚛 **Delivery Partner Role:** Local drivers can view and claim deliveries.
+* 📦 **Live Delivery Tracking:** Buyers see real-time order progress.
+* 🌍 **Eco-Delivery Optimization:** Combines nearby deliveries to reduce fuel use.
 
-# Step 3: Install the necessary dependencies.
-npm i
+#### 🏅 Farmer Empowerment
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+* 🏆 **Farmer Badges:** Rewards for punctuality, freshness, and consistency.
+* 📚 **Learning Hub:** Daily micro-tips on sustainable farming practices.
+* 💬 **Community Feed:** Farmers can share updates and connect locally.
+
+#### 🔒 Trust & Transparency
+
+* ✅ **Verified Fresh Badge:** Applies automatically for uploads within 24 hours.
+* 🧾 **Traceability QR Code:** Buyers scan to view farm info & harvest date.
+* 🪪 **Farmer Verification:** Manual ID validation handled by admin.
+
+#### 📊 Impact & Analytics
+
+* 📈 **Analytics Dashboard:** Tracks popular crops, order trends, and user activity.
+* 🗺️ **Geo Heat Map:** Displays active farming and buying zones.
+* 🌱 **Carbon Savings Tracker:** Estimates CO₂ saved by local deliveries.
+
+---
+
+### 🧱 Tech Stack
+
+| Layer                | Technology                          |
+| -------------------- | ----------------------------------- |
+| **Frontend**         | React (JavaScript)                  |
+| **Styling**          | Tailwind CSS                        |
+| **State Management** | React Context / Redux Toolkit       |
+| **Backend**          | Firebase (Firestore, Auth, Storage) |
+| **Hosting**          | Firebase Hosting / Vercel           |
+| **Payments (Mock)**  | Simulated bKash/Nagad flow          |
+| **Charts & Maps**    | Recharts + Google Maps API          |
+| **QR Generator**     | `react-qr-code`                     |
+
+---
+
+### 📂 Folder Structure
+
+```
+krishibridge/
+src/
+├── assets/              # Images & static assets
+│   ├── fresh-produce.jpg
+│   └── hero-farm.jpg
+├── components/
+│   └── ui/              # Reusable UI components
+│       ├── BadgeDisplay.jsx
+│       ├── FreshnessScore.jsx
+│       └── QRTraceability.jsx
+├── hooks/               # Custom React hooks
+│   ├── useMobile.js
+│   └── useToast.js
+├── lib/                 # Utility libraries
+│   └── freshness.js
+├── utils.js             # Helper functions
+├── pages/               # Route pages
+│   ├── AdminDashboard.jsx
+│   ├── Auth.jsx
+│   ├── BuyerDashboard.jsx
+│   ├── FarmerDashboard.jsx
+│   ├── Landing.jsx
+│   └── NotFound.jsx
+├── App.css              # Global CSS
+├── App.jsx              # Root React component
+├── index.css
+├── main.jsx             # ReactDOM render
+└── vite-env.d.ts
+```
+
+---
+
+### ⚙️ Setup Guide
+
+#### 🧩 Prerequisites
+
+* Node.js ≥ 18
+* Firebase account (Firestore + Auth + Storage)
+* Google Maps API key (optional for geo features)
+
+#### 🚀 Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/yourusername/krishibridge.git
+cd krishibridge
+
+# Install dependencies
+npm install
+
+# Run locally
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+#### 🔐 Firebase Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Create a new Firebase project.
 
-**Use GitHub Codespaces**
+2. Enable the following:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+   * Authentication → Email/Password
+   * Firestore Database
+   * Storage
 
-## What technologies are used for this project?
+3. Add your Firebase config in `src/services/firebase.js`:
 
-This project is built with:
+```js
+import { initializeApp } from "firebase/app";
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
 
-## How can I deploy this project?
+export const app = initializeApp(firebaseConfig);
+```
 
-Simply open [Lovable](https://lovable.dev/projects/8a402f7c-592b-4e35-9b6b-811a59c70e70) and click on Share -> Publish.
+4. Add your environment variable to `.env`:
 
-## Can I connect a custom domain to my Lovable project?
+```
+VITE_FIREBASE_API_KEY=your_api_key
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 🧠 Demo Scenarios (Hackathon Tips)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+| Scenario                   | What to Show                                        |
+| -------------------------- | --------------------------------------------------- |
+| 👨‍🌾 Farmer adds crop     | Show image upload + freshness % auto update         |
+| 👩‍💼 Buyer orders produce | Display live order tracking                         |
+| 🚚 Delivery partner claim  | Show “Order claimed” → status updates in buyer view |
+| 🏆 Badges                  | Show “Top Farmer of the Week”                       |
+| 📊 Dashboard               | Display mock analytics chart                        |
+
+---
+
+### 💡 Bonus Pitch Line
+
+> “KrishiBridge uses **AI-powered insights and community-driven trust** to connect local farmers and buyers — ensuring fair prices, fresher food, and greener deliveries.”
+
+---
+
+### 🌟 Suggested Demo Flow
+
+1. 🧑‍🌾 Login as Farmer → Add crop
+2. 🛒 Login as Buyer → Order item
+3. 🚚 Login as Delivery Partner → Claim delivery
+4. 📈 Show analytics dashboard
+5. 💬 End with community feed
+
+---
+
+### 🧑‍💻 Team KrishiBridge
+
+| Role                 | Name | Responsibility             |
+| -------------------- | ---- | -------------------------- |
+| 💡 Ideation & Design | You  | UI/UX, layout, mockups     |
+| 💻 Frontend Dev      | —    | React + Firebase setup     |
+| 🔥 Backend           | —    | Firebase & API Integration |
+| 🎤 Presenter         | —    | Hackathon Pitch            |
+
+---
+
+### 🏁 License
+
+MIT License © 2025 KrishiBridge Team
+
+
