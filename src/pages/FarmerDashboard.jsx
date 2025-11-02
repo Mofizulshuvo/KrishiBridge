@@ -112,6 +112,7 @@ const FarmerDashboard = () => {
           </div>
         </div>
       </header>
+      
 
       <div className="container py-8">
         {/* Welcome & Badges */}
