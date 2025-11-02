@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/FarmerDashboard.jsx
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,32 +14,76 @@ import { FreshnessScore } from "@/components/FreshnessScore";
 import { calculateDistance } from "@/lib/freshness";
 import { Badge } from "@/components/ui/badge";
 
+import { db } from "../Firebase/firebase.config";
+import { collection, addDoc, getDocs, query, where, serverTimestamp } from "firebase/firestore";
+
 const FarmerDashboard = () => {
-
- 
-    const name = localStorage.getItem("userName") || "Farmer";
-    const role = localStorage.getItem("userRole") || "farmer";
-
+  const name = localStorage.getItem("userName") || "Farmer";
+  const role = localStorage.getItem("userRole") || "farmer";
+  const userId = localStorage.getItem("userId"); // Make sure you store uid on login/signup
 
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [products, setProducts] = useState([]);
   const { toast } = useToast();
 
-  const handleAddProduct = (e) => {
+  // Fetch farmer products on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const q = query(collection(db, "products"), where("farmerId", "==", userId));
+        const snapshot = await getDocs(q);
+        const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+    fetchProducts();
+  }, [userId]);
+
+  const handleAddProduct = async (e) => {
     e.preventDefault();
-    toast({
-      title: "Product Added! / পণ্য যোগ করা হয়েছে!",
-      description: "Your product is now live on the marketplace",
-    });
-    setShowAddProduct(false);
+    const form = e.target;
+    const productName = form["product-name"].value.trim();
+    const price = parseFloat(form.price.value);
+    const quantity = parseInt(form.quantity.value);
+    const category = form.category.value;
+    const description = form.description.value;
+
+    if (!productName || !price || !quantity || !category) {
+      return toast({ title: "Error", description: "Please fill all required fields" });
+    }
+
+    try {
+      // Add product to Firestore
+      await addDoc(collection(db, "products"), {
+        farmerId: userId,
+        farmerName: name,
+        name: productName,
+        price,
+        quantity,
+        category,
+        description,
+        status: quantity > 0 ? "active" : "low_stock",
+        uploadTime: serverTimestamp(),
+      });
+
+      // Re-fetch all products for this farmer
+      const q = query(collection(db, "products"), where("farmerId", "==", userId));
+      const snapshot = await getDocs(q);
+      const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(fetchedProducts);
+
+      toast({ title: "Product Added!", description: "Your product is now live on the marketplace" });
+      form.reset();
+      setShowAddProduct(false);
+    } catch (error) {
+      console.error("Error adding product:", error);
+      toast({ title: "Error", description: error.message });
+    }
   };
 
   const farmerBadges = ["freshness_champion", "punctual", "trusted"];
-
-  const mockProducts = [
-    { id: "Fresh Tomatoes / টমেটো", price: 45, unit: "kg", status: "active", quantity: 50, uploadTime: Date.now() - 3 * 60 * 60 * 1000 },
-    { id: "Cucumbers / শসা", price: 35, unit: "kg", status: "active", quantity: 40, uploadTime: Date.now() - 6 * 60 * 60 * 1000 },
-    { id: "Green Chili / কাঁচা মরিচ", price: 60, unit: "kg", status: "low_stock", quantity: 10, uploadTime: Date.now() - 1 * 60 * 60 * 1000 },
-  ];
 
   const suggestedBuyers = [
     { id: "Shahed Restaurant", name: "Shahed Restaurant", location: "GEC", preferredProducts: ["Tomatoes", "Cucumbers"], distance: calculateDistance("Kumira", "GEC") },
@@ -74,11 +119,11 @@ const FarmerDashboard = () => {
       </header>
 
       <div className="container py-8">
-        {/* Welcome Section with Badges */}
+        {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Welcomem,{name}</h1>
+              <h1 className="text-3xl font-bold mb-2">Welcome, {name}</h1>
               <p className="text-muted-foreground">Manage your products and track your sales</p>
             </div>
             <div className="flex flex-col gap-2">
@@ -100,29 +145,26 @@ const FarmerDashboard = () => {
               <p className="text-xs text-muted-foreground">+12% from yesterday</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Active Products</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
-              <p className="text-xs text-muted-foreground">3 products listed</p>
+              <div className="text-2xl font-bold">{products.length}</div>
+              <p className="text-xs text-muted-foreground">{products.length} products listed</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
               <Bell className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{mockOrders.filter(o => o.status === "pending").length}</div>
               <p className="text-xs text-muted-foreground">Awaiting delivery</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Avg Freshness</CardTitle>
@@ -157,21 +199,21 @@ const FarmerDashboard = () => {
                   <form onSubmit={handleAddProduct} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="product-name">Product Name / পণ্যের নাম</Label>
-                      <Input id="product-name" placeholder="e.g., Fresh Tomatoes" required />
+                      <Input id="product-name" name="product-name" placeholder="e.g., Fresh Tomatoes" required />
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="price">Price (৳/kg)</Label>
-                        <Input id="price" type="number" placeholder="45" required />
+                        <Input id="price" name="price" type="number" placeholder="45" required />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="quantity">Quantity Available</Label>
-                        <Input id="quantity" type="number" placeholder="50" required />
+                        <Input id="quantity" name="quantity" type="number" placeholder="50" required />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Category / বিভাগ</Label>
-                      <Select>
+                      <Select name="category">
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -185,14 +227,7 @@ const FarmerDashboard = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
-                      <Textarea id="description" placeholder="Brief description of your product..." />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Product Photo</Label>
-                      <div className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-primary/5 transition-colors cursor-pointer">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-                      </div>
+                      <Textarea id="description" name="description" placeholder="Brief description of your product..." />
                     </div>
                     <div className="flex gap-3">
                       <Button type="submit" variant="hero" className="flex-1">Add Product</Button>
@@ -205,14 +240,14 @@ const FarmerDashboard = () => {
 
             {/* Products List */}
             <div className="space-y-4">
-              {mockProducts.map((product) => (
+              {products.map((product) => (
                 <Card key={product.id}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold">{product.id}</h3>
+                        <h3 className="font-semibold">{product.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          ৳{product.price}/{product.unit} • {product.quantity} {product.unit} available
+                          ৳{product.price}/{product.unit || "kg"} • {product.quantity} {product.unit || "kg"} available
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -224,7 +259,7 @@ const FarmerDashboard = () => {
                         <Button variant="ghost" size="sm">Edit</Button>
                       </div>
                     </div>
-                    <FreshnessScore uploadTime={product.uploadTime} size="sm" />
+                    <FreshnessScore uploadTime={product.uploadTime?.seconds ? product.uploadTime.seconds * 1000 : Date.now()} size="sm" />
                   </CardContent>
                 </Card>
               ))}
@@ -284,7 +319,6 @@ const FarmerDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Impact Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">🌍 Your Impact</CardTitle>
