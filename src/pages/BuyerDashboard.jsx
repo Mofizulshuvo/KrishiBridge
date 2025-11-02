@@ -15,6 +15,8 @@ const BuyerDashboard = () => {
   const [freshnessFilter, setFreshnessFilter] = useState("all");
   const [sortBy, setSortBy] = useState("freshness");
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+
 
   const handleAddToCart = (productId) => {
     setCart([...cart, productId]);
@@ -80,12 +82,22 @@ const BuyerDashboard = () => {
   ];
 
   const filteredProducts = mockProducts
-    .filter((product) => {
-      if (freshnessFilter === "ultra") return product.freshness >= 95;
-      if (freshnessFilter === "high") return product.freshness >= 85;
-      return true;
-    })
-    .sort((a, b) => {
+  .filter((product) => {
+    // ✅ Search filter
+    const searchMatch =
+      product.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.nameBangla.includes(searchQuery) ||
+      product.farmer.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!searchMatch) return false;
+
+    // ✅ Freshness filter
+    if (freshnessFilter === "ultra") return product.freshness >= 95;
+    if (freshnessFilter === "high") return product.freshness >= 85;
+    return true;
+  })
+  .sort((a, b) => {
+ 
       if (sortBy === "freshness") return b.freshness - a.freshness;
       if (sortBy === "distance") return a.distance - b.distance;
       if (sortBy === "price_low") return a.price - b.price;
@@ -154,7 +166,12 @@ const BuyerDashboard = () => {
         <div className="mb-8 space-y-4">
           <div className="relative max-w-2xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input placeholder="Search for products... পণ্য অনুসন্ধান করুন" className="pl-10 h-12" />
+            <Input
+               placeholder="Search for products... পণ্য অনুসন্ধান করুন"
+                   className="pl-10 h-12"
+                   value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 items-center">
